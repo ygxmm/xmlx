@@ -1,5 +1,18 @@
 #import <UIKit/UIKit.h>
 
+// 告诉编译器这些类都是 UIView 的子类
+@interface TMEAdFullScreenMaskView : UIView
+@end
+
+@interface XMHomeRecMaskBannerAdCell : UITableViewCell
+@end
+
+@interface TMEAdMaskBannerView : UIView
+@end
+
+@interface TMEAdNativeView : UIView
+@end
+
 // 1. 干掉全屏/开屏广告遮罩
 %hook TMEAdFullScreenMaskView
 - (void)didMoveToWindow {
