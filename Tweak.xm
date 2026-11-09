@@ -1,56 +1,40 @@
 #import <UIKit/UIKit.h>
 
-// 声明我们用到的类
+// ==========================================
+// 1. 核心：精准拦截广点通开屏广告控制器
+// ==========================================
 @interface TGGDTSplashViewController : UIViewController
 @end
-@interface XMLaunchView : UIView
-@end
-@interface TMEAdFullScreenMaskView : UIView
-@end
-@interface XMHomeRecMaskBannerAdCell : UITableViewCell
-@end
-@interface TMEAdMaskBannerView : UIView
-@end
-@interface TMEAdNativeView : UIView
-@end
-@interface XMHPlayingAdLargeView : UIView
-@end
-@interface XMRNPlayLargeAdView : UIView
-@end
-@interface XMHPlayingYellowBarUnionItem : UIView
-@end
 
-// ==========================================
-// 暴力干掉开屏 VC
-// ==========================================
 %hook TGGDTSplashViewController
 
-// 1. 强行不让它加载真实的 View
-- (void)loadView {
-    // 不调用 %orig，直接给它一个透明的空 View
-    self.view = [[UIView alloc] init];
-    self.view.backgroundColor = [UIColor clearColor];
+// 拦截展示广告的方法 1
+- (BOOL)splashViewShowWithModel:(id)model animBegin:(id)animBegin animEnd:(id)animEnd cacheWebView:(BOOL)cacheWebView {
+    NSLog(@"[xmly] 拦截开屏广告展示方法 1，直接返回 NO");
+    // 主动调用自带的关闭方法，清理现场
+    [self splashViewDismissAnimated:NO completion:nil];
+    return NO; // 拒绝展示
 }
 
-// 2. 试图阻断它的初始化
-- (instancetype)init {
-    self = %orig;
-    if (self) {
-        NSLog(@"[xmly] 抓到开屏广告 VC 初始化，准备关闭");
-    }
-    return self;
+// 拦截展示广告的方法 2
+- (BOOL)splashViewShowWithModel:(id)model animBegin:(id)animBegin animEnd:(id)animEnd cacheWebView:(BOOL)cacheWebView firstFrameCompletion:(id)firstFrameCompletion {
+    NSLog(@"[xmly] 拦截开屏广告展示方法 2，直接返回 NO");
+    [self splashViewDismissAnimated:NO completion:nil];
+    return NO;
 }
 
-// 3. 只要它一出现，立刻关掉
-- (void)viewDidAppear:(BOOL)animated {
-    %orig;
-    [self dismissViewControllerAnimated:NO completion:nil];
+// 拦截自带的关闭方法，确保它真的被清理掉
+- (void)splashViewDismissAnimated:(BOOL)animated completion:(id)completion {
+    %orig(YES, completion); // 强制执行带动画的关闭
 }
+
 %end
 
 // ==========================================
-// 顺手干掉底层的启动图
+// 2. 干掉底层启动图 (XMLaunchView)
 // ==========================================
+@interface XMLaunchView : UIView
+@end
 %hook XMLaunchView
 - (void)didMoveToWindow {
     %orig;
@@ -59,8 +43,17 @@
 %end
 
 // ==========================================
-// 其他常规页面广告 (首页 + 播放页)
+// 3. 首页广告拦截 (保留之前的)
 // ==========================================
+@interface TMEAdFullScreenMaskView : UIView
+@end
+@interface XMHomeRecMaskBannerAdCell : UITableViewCell
+@end
+@interface TMEAdMaskBannerView : UIView
+@end
+@interface TMEAdNativeView : UIView
+@end
+
 %hook TMEAdFullScreenMaskView
 - (void)didMoveToWindow { %orig; self.hidden = YES; [self removeFromSuperview]; }
 %end
@@ -79,6 +72,16 @@
 %hook TMEAdNativeView
 - (void)didMoveToWindow { %orig; self.hidden = YES; }
 %end
+
+// ==========================================
+// 4. 播放页广告拦截 (保留之前的)
+// ==========================================
+@interface XMHPlayingAdLargeView : UIView
+@end
+@interface XMRNPlayLargeAdView : UIView
+@end
+@interface XMHPlayingYellowBarUnionItem : UIView
+@end
 
 %hook XMHPlayingAdLargeView
 - (void)didMoveToWindow {
