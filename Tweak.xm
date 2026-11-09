@@ -1,9 +1,10 @@
 #import <UIKit/UIKit.h>
 
-// ==========================================
-// 1. 类声明 (防止编译报错)
-// ==========================================
-// 首页广告
+// 声明我们用到的类
+@interface TGGDTSplashViewController : UIViewController
+@end
+@interface XMLaunchView : UIView
+@end
 @interface TMEAdFullScreenMaskView : UIView
 @end
 @interface XMHomeRecMaskBannerAdCell : UITableViewCell
@@ -12,8 +13,6 @@
 @end
 @interface TMEAdNativeView : UIView
 @end
-
-// 播放页广告
 @interface XMHPlayingAdLargeView : UIView
 @end
 @interface XMRNPlayLargeAdView : UIView
@@ -21,49 +20,37 @@
 @interface XMHPlayingYellowBarUnionItem : UIView
 @end
 
-// 开屏广告 (腾讯广点通)
-@interface TGGDTSplashViewController : UIViewController
-@end
-@interface XMLaunchView : UIView
-@end
-
 // ==========================================
-// 2. 核心拦截：直接拦截 UIViewController 的弹出
-// ==========================================
-%hook UIViewController
-
-- (void)presentViewController:(UIViewController *)viewControllerToPresent animated:(BOOL)flag completion:(void (^)(void))completion {
-    // 如果是广点通的开屏广告，直接拦截，不让它弹出来！
-    if ([viewControllerToPresent isKindOfClass:NSClassFromString(@"TGGDTSplashViewController")]) {
-        NSLog(@"[xmly] 拦截了开屏广告 VC 的弹出");
-        if (completion) {
-            completion();
-        }
-        return; 
-    }
-    %orig;
-}
-
-%end
-
-// ==========================================
-// 3. 兜底拦截：如果开屏广告是加在 Window 上的
+// 暴力干掉开屏 VC
 // ==========================================
 %hook TGGDTSplashViewController
-- (void)viewWillAppear:(BOOL)animated {
-    %orig;
-    // 就算它弹出来了，我也让你看不见
-    self.view.hidden = YES;
-    self.view.alpha = 0;
+
+// 1. 强行不让它加载真实的 View
+- (void)loadView {
+    // 不调用 %orig，直接给它一个透明的空 View
+    self.view = [[UIView alloc] init];
+    self.view.backgroundColor = [UIColor clearColor];
 }
+
+// 2. 试图阻断它的初始化
+- (instancetype)init {
+    self = %orig;
+    if (self) {
+        NSLog(@"[xmly] 抓到开屏广告 VC 初始化，准备关闭");
+    }
+    return self;
+}
+
+// 3. 只要它一出现，立刻关掉
 - (void)viewDidAppear:(BOOL)animated {
     %orig;
-    // 自动关掉它
     [self dismissViewControllerAnimated:NO completion:nil];
 }
 %end
 
-// 顺手把底层的启动图也给弄透明，防止白屏
+// ==========================================
+// 顺手干掉底层的启动图
+// ==========================================
 %hook XMLaunchView
 - (void)didMoveToWindow {
     %orig;
@@ -72,7 +59,7 @@
 %end
 
 // ==========================================
-// 4. 其他页面广告 (保留之前的)
+// 其他常规页面广告 (首页 + 播放页)
 // ==========================================
 %hook TMEAdFullScreenMaskView
 - (void)didMoveToWindow { %orig; self.hidden = YES; [self removeFromSuperview]; }
@@ -80,11 +67,8 @@
 
 %hook XMHomeRecMaskBannerAdCell
 - (void)layoutSubviews {
-    %orig;
-    self.hidden = YES;
-    CGRect frame = self.frame;
-    frame.size.height = 0;
-    self.frame = frame;
+    %orig; self.hidden = YES;
+    CGRect frame = self.frame; frame.size.height = 0; self.frame = frame;
 }
 %end
 
@@ -98,30 +82,21 @@
 
 %hook XMHPlayingAdLargeView
 - (void)didMoveToWindow {
-    %orig;
-    self.hidden = YES;
-    CGRect frame = self.frame;
-    frame.size.height = 0;
-    self.frame = frame;
+    %orig; self.hidden = YES;
+    CGRect frame = self.frame; frame.size.height = 0; self.frame = frame;
 }
 %end
 
 %hook XMRNPlayLargeAdView
 - (void)didMoveToWindow {
-    %orig;
-    self.hidden = YES;
-    CGRect frame = self.frame;
-    frame.size.height = 0;
-    self.frame = frame;
+    %orig; self.hidden = YES;
+    CGRect frame = self.frame; frame.size.height = 0; self.frame = frame;
 }
 %end
 
 %hook XMHPlayingYellowBarUnionItem
 - (void)didMoveToWindow {
-    %orig;
-    self.hidden = YES;
-    CGRect frame = self.frame;
-    frame.size.height = 0;
-    self.frame = frame;
+    %orig; self.hidden = YES;
+    CGRect frame = self.frame; frame.size.height = 0; self.frame = frame;
 }
 %end
