@@ -19,6 +19,7 @@
 
 // 开屏 & 首页
 @interface TGGDTSplashViewController : UIViewController
+- (void)splashViewDismissAnimated:(BOOL)animated completion:(void (^)(void))completion;
 @end
 @interface XMHomeRecMaskBannerAdCell : UICollectionViewCell
 @end
