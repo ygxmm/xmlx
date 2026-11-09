@@ -1,0 +1,9 @@
+Package: com.tzyhb.xmly
+Name: xmly
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: 喜马拉雅去广告优化
+Maintainer: tzyhb
+Author: tzyhb
+Section: Tweaks
+Depends: mobilesubstrate
